@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# This script updates dynamically a subdomain on a linode server with the "external" IP address
+# of the computer where this script runs.
+# It uses the new Linode API v4
+
+# by Haris Baltzakis, 15/05/2019
+# haris@harisbaltzakis.com
+
+# This script is released in the public domain.
+
+LINODE_TOKEN=[Your linode authentication token]
+LINODE_DOMAIN_ID=[Your linode domain id]
+LINODE_RESOURCE_ID=[Your linode resource id]
+MYHOSTNAME=[Your hostname here]
+
+touch ~/mylastexternalip.txt
+OLD_EXTERNAL_IP=$(cat ~/mylastexternalip.txt)
+
+# http://myexternalip.com/raw can be replaced with any other service/script that provides the external IP address of your computer.
+CUR_EXTERNAL_IP=$(curl http://myexternalip.com/raw)
+
+echo -e "Old external IP: "$OLD_EXTERNAL_IP
+echo -e "Cur external IP: "$CUR_EXTERNAL_IP
+
+if [ "$CUR_EXTERNAL_IP" = "$OLD_EXTERNAL_IP" ];
+then
+echo -e "External IP unchanged"
+else
+echo $CUR_EXTERNAL_IP > ~/mylastexternalip.txt
+curl -H "Authorization: Bearer $LINODE_TOKEN" -H "Content-Type: application/json" -X PUT -d '{"type": "A", "target": "'$CUR_EXTERNAL_IP'", "name": "'$MYHOSTNAME'"}' https://api.linode.com/v4/domains/$LINODE_DOMAIN_ID/records/$LINODE_RESOURCE_ID
+echo  -e "\nExternal IP updated"
+
+fi
