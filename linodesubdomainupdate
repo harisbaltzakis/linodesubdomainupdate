@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # This script updates dynamically a subdomain on a linode server with the "external" IP address
 # of the computer where this script runs.
@@ -19,6 +19,8 @@ OLD_EXTERNAL_IP=$(cat ~/mylastexternalip.txt)
 
 # http://myexternalip.com/raw can be replaced with any other service/script that provides the external IP address of your computer.
 CUR_EXTERNAL_IP=$(curl http://myexternalip.com/raw)
+# Alternative method with wget instead of curl in comment below
+#CUR_EXTERNAL_IP=$(wget -q -O- http://myexternalip.com/raw)
 
 echo -e "Old external IP: "$OLD_EXTERNAL_IP
 echo -e "Cur external IP: "$CUR_EXTERNAL_IP
@@ -28,7 +30,11 @@ then
 echo -e "External IP unchanged"
 else
 echo $CUR_EXTERNAL_IP > ~/mylastexternalip.txt
+
 curl -H "Authorization: Bearer $LINODE_TOKEN" -H "Content-Type: application/json" -X PUT -d '{"type": "A", "target": "'$CUR_EXTERNAL_IP'", "name": "'$MYHOSTNAME'"}' https://api.linode.com/v4/domains/$LINODE_DOMAIN_ID/records/$LINODE_RESOURCE_ID
+# Alternative method with wget instead of curl in comment below. Caution: older versions of wget do not support the --method arguement
+#wget -q -O- --header "Authorization: Bearer $LINODE_TOKEN" --header "Content-Type: application/json" --method "PUT" --body-data '{"type": "A", "target": "'$CUR_EXTERNAL_IP'", "name": "'$MYHOSTNAME'"}' https://api.linode.com/v4/domains/$LINODE_DOMAIN_ID/records/$LINODE_RESOURCE_ID
+
 echo  -e "\nExternal IP updated"
 
 fi
